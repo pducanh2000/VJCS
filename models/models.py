@@ -8,7 +8,7 @@ class ModelSelector(object):
     def __init__(self):
         self.model = None
 
-    def select_model(self, name):
+    def select_model(self, name) -> nn.Module:
         method = getattr(self, name, lambda: 'Invalid model')
         return method()
 
@@ -59,9 +59,7 @@ class Model(nn.Module):
         self.extractor = self.get_extractor()
         self.classifier = self.get_classifier()
 
-
     def get_extractor(self):
-        
         switch = ModelSelector()
         extractor = switch.select_model(self.cfg['name'])
         for name, layer in extractor.named_children():
@@ -75,6 +73,7 @@ class Model(nn.Module):
         return nn.Linear(self.cfg['feat'], 17, bias=True)
 
     def forward(self, x):
+        feat = None
         if self.train:
             if self.cfg['name'] == 'inceptionnetv3':
                 if self.train():

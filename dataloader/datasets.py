@@ -1,74 +1,12 @@
 import torch
 from torch.utils.data import Dataset
 from torchvision.transforms import ToPILImage, ToTensor, Normalize
-
 import numpy as np
 import cv2
 
 
-class PostureDataset(Dataset):
-    '''Create sleeping posture dataset
-    Arguments
-    ----------
-    data: dict
-        Dictionary includes image paths, posture types
-
-    preprocess: bool
-        Determine this data use preprocessing or not 
-
-    Returns
-    ----------
-    torch.Tensor
-        Tensor: (image, posture)
-    '''
-    def __init__(self, data, preprocess=True):
-        super(PostureDataset, self).__init__()
-        self.images = data["images"]
-        self.postures = data["postures"].reshape(-1)
-        self.preprocessing = preprocess
-
-    def __getitem__(self, item):
-        if self.preprocessing is True:
-            data_item = self.preprocess(self.images[item], self.postures[item])
-        else:
-            data_item = self.transform(self.images[item], self.postures[item])
-        
-        return data_item
-
-    def __len__(self):
-
-        return len(self.postures)
-
-    @staticmethod
-    def preprocess(image, posture):
-        image = cv2.equalizeHist(image)
-        
-        image = ToPILImage()(image)
-        image = image.convert('RGB')
-        image = image.resize((112, 224))
-
-        image = ToTensor()(image)
-        image = Normalize(mean=[0.485, 0.456, 0.406],
-                          std=[0.229, 0.224, 0.225])(image)
-
-        return image, torch.tensor(posture, dtype=torch.long)
-
-    @staticmethod
-    def transform(image, posture):
-        image = ToPILImage()(image)
-        image = image.convert('RGB')
-
-        image = ToTensor()(image)
-        image = Normalize(mean=[0.485, 0.456, 0.406],
-                          std=[0.229, 0.224, 0.225])(image)
-
-        return image, torch.tensor(posture, dtype=torch.long)
-
-
-
-class PostureContrastiveDataset(Dataset):
+class PostureDatasetContrastive(Dataset):
     '''Create sleeping posture dataset for training with contrastive loss
-    
     Arguments
     ----------
     data: dict
@@ -85,12 +23,12 @@ class PostureContrastiveDataset(Dataset):
     torch.Tensor:
         tensor (image1, image2, similar_label, posture_labe)
     '''
-    def __init__(self, data, train_mode=True, preprocess=True):
-        super(PostureContrastiveDataset, self).__init__()
+    def __init__(self, data, model_cfg, train_mode=True, preprocess=True):
+        super(PostureDatasetContrastive, self).__init__()
         self.train_mode = train_mode
         self.images = data["images"]
         self.postures = data["postures"].reshape(-1)
-        
+        self.model_cfg = model_cfg
         
         self.postures_set = set(self.postures)
         self.label_to_indices = {label: np.where(self.postures == label)[0] for label in self.postures_set}
@@ -148,7 +86,7 @@ class PostureContrastiveDataset(Dataset):
         
         image = ToPILImage()(image)
         image = image.convert('RGB')
-        image = image.resize((112, 224))
+        image = image.resize(self.model_cfg['size'])
 
         image = ToTensor()(image)
         image = Normalize(mean=[0.485, 0.456, 0.406],
@@ -158,6 +96,84 @@ class PostureContrastiveDataset(Dataset):
 
     @staticmethod
     def transform(image):
+
+        image = ToTensor()(image)
+        image = Normalize(mean=[0.485, 0.456, 0.406],
+                          std=[0.229, 0.224, 0.225])(image)
+
+        return image
+
+
+class PostureDatasetTriplet(Dataset):
+    def __init__(self, data, model_cfg, use_preprocess=True):
+        super(PostureDatasetTriplet, self).__init__()
+        self.images = data["images"]
+        self.postures = data["postures"].reshape(-1)
+        self.preprocessing = use_preprocess
+        self.index = np.array((range(len(self.postures))))
+        self.model_cfg = model_cfg
+
+    def __getitem__(self, item):
+        anchor_img = self.images[item]
+        anchor_label = self.postures[item]
+        positive_list = self.index[self.index!=item][self.postures[self.index!=item]==anchor_label]
+        positive_item = random.choice(positive_list)
+        positive_img = self.images[positive_item]
+        negative_list = self.index[self.index!=item][self.postures[self.index!=item]!=anchor_label]
+        negative_item = random.choice(negative_list)
+        negative_img = self.images[negative_item]
+        if self.preprocessing:
+            anchor_img = preprocess(anchor_img)
+            positive_img = preprocess(positive_img)
+            negative_img = preprocess(negative_img)
+        else:
+            anchor_img = self.transform(anchor_img)
+        return anchor_img, positive_img, negative_img, torch.tensor(anchor_label, dtype=torch.long)
+
+    def __len__(self):
+        return len(self.postures)
+
+    @staticmethod
+    def preprocess(image):
+        image = cv2.equalizeHist(image)
+        image = ToPILImage()(image)
+        image = image.convert('RGB')
+        image = image.resize(self.model_cfg['size'])
+
+        image = ToTensor()(image)
+        image = Normalize(mean=[0.485, 0.456, 0.406],
+                          std=[0.229, 0.224, 0.225])(image)
+
+        return image
+
+
+
+class PostureDataset(Dataset):
+    def __init__(self, data,model_cfg,preprocess=True):
+        super(PostureDataset, self).__init__()
+        self.images = data["images"]
+        self.postures = data["postures"].reshape(-1)
+        self.preprocessing = preprocess
+        self.model_cfg = model_cfg
+
+    def __getitem__(self, item):
+        if self.preprocessing is True:
+            data_item = self.preprocess(self.images[item], self.postures[item])
+        else:
+            data_item = self.transform(self.images[item], self.postures[item])
+        
+        return data_item
+
+    def __len__(self):
+        return len(self.postures)
+
+    @staticmethod
+    def preprocess(image):
+        image = cv2.equalizeHist(image)
+        
+        image = ToPILImage()(image)
+        image = image.convert('RGB')
+        image = image.resize(self.model_cfg['size'])
 
         image = ToTensor()(image)
         image = Normalize(mean=[0.485, 0.456, 0.406],

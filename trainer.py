@@ -16,11 +16,11 @@ def main():
 	parser.add_argument('batch_size',type=int,default=64)
 	parser.add_argument('save_checkpoint',type=bool,default=False)
 	args = vars(parser.parse_args())
-	loss_config = load_config('./config.yml')
+	config = load_config('./config.yml')
 	if args['training_type'] == 'loso':
-		train_loso(args,loss_config)
+		train_loso(args,config)
 	else:
-		train_kfold(args,loss_config)
+		train_kfold(args,config)
 
 
 

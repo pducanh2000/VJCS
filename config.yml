@@ -1,0 +1,25 @@
+losses:
+  'a_softmax':
+    loss_type : 'arcface'
+    eps : 1e-7
+    s : None
+    m : None
+  'am_softmax':
+    s : 30
+    m : 0.35
+  'circle':
+    m : None
+    gamma : None
+  'contrastive_center_loss':
+    lambda_c : 1
+  'contrastive_loss':
+    margin : 1
+  'focal_loss':
+    gamma : None
+    labda : None
+  'triplet':
+    margin: 1
+  'triplet_center':
+    margin: 1
+
+

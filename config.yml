@@ -23,3 +23,28 @@ losses:
     margin: 1
 
 
+models :
+  'resnet50':
+    'name': 'resnet_50'
+    'feat': 2048
+    'size': (224, 224)
+  'resnet101' :
+    'name': 'resnet_101'
+    'feat': 2048
+    'size': (224, 224)
+  'inceptionetv3' :
+    'name': 'inceptionnetv3'
+    'feat': 2048
+    'size': (299, 299)
+  'mobilenetv2' :
+    'name': 'mobilenetv2'
+    'feat': 1280
+    'size': (224, 224)
+  'mobilenetv3' :
+    'name': 'mobilenetv3'
+    'feat': 1280
+    'size': (224, 224)
+  'efficientnetb0':
+    'name': 'efficientnetb0'
+    'feat': 1280
+    'size': (112, 224)

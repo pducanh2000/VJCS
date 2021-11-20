@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
+from efficientnet_pytorch import EfficientNet
 
 
-class Switcher_model(object):
+class ModelSelector(object):
     def __init__(self):
         self.model = None
 
@@ -37,29 +38,52 @@ class Switcher_model(object):
         return self.model
 
     def efficientnetb0(self):
-        self.model = EfficientNet.from_pretrained('efficientnet-b0', num_classes=17)
+        self.model = EfficientNet.from_pretrained('efficientnet-b0')
         print("Loaded Pretrained EfficientNet-B0 ")
         return self.model
+
+
+class Identity(nn.Module):
+    def __init__(self):
+        super(Identity, self).__init__()
+
+    def forward(self, x):
+
+        return x
 
 
 class Model(nn.Module):
     def __init__(self, model_cfg):
         super(Model, self).__init__()
         self.cfg = model_cfg
-        self.switch = Switcher_model()
-        self.pretrain = self.switch.select_model(self.cfg['name'])
+        self.extractor = self.get_extractor()
+        self.classifier = self.get_classifier()
 
-        if self.cfg['name'] in ['resnet_50', 'resnet_101', 'inceptionnetv3']:
-            self.pretrain.fc = nn.Linear(self.cfg['feat'], 17, bias=True)
-        elif self.cfg['name'] in ['mobilenetv2', 'mobilenetv3']:
-            self.pretrain.classifier[-1] = nn.Linear(self.cfg['feat'], 17, bias=True)
-        else:
-            self.pretrain._fc = nn.Linear(self.cfg['feat'], 17, bias=True)
+
+    def get_extractor(self):
+        
+        switch = ModelSelector()
+        extractor = switch.select_model(self.cfg['name'])
+        for name, layer in extractor.named_children():
+            if isinstance(layer, nn.Linear):
+                extractor.add_module(name, Identity())
+
+        return extractor
+
+    def get_classifier(self):
+
+        return nn.Linear(self.cfg['feat'], 17, bias=True)
 
     def forward(self, x):
-        if self.cfg['name'] == 'inceptionnetv3':
-            if self.train():
-                x = self.pretrain(x)[0]
+        if self.train:
+            if self.cfg['name'] == 'inceptionnetv3':
+                if self.train():
+                    feat = self.extractor(x)[0]
+            else:
+                feat = self.extractor(x)
         else:
-            x = self.pretrain(x)
-        return x
+            feat = self.extractor(x)
+
+        out = self.classifier(feat)
+
+        return feat, out

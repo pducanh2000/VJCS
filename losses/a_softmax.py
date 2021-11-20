@@ -2,9 +2,10 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
+
 class AngularPenaltySMLoss(nn.Module):
 
-    def __init__(self, in_features, out_features, loss_type='arcface', eps=1e-7, s=None, m=None):
+    def __init__(self, feat_dim=1280, num_classes=17, loss_type='arcface', eps=1e-7, s=None, m=None):
         '''
         Angular Penalty Softmax Loss
         Three 'loss_types' available: ['arcface', 'sphereface', 'cosface']
@@ -27,14 +28,14 @@ class AngularPenaltySMLoss(nn.Module):
             self.s = 30.0 if not s else s
             self.m = 0.4 if not m else m
         self.loss_type = loss_type
-        self.in_features = in_features
-        self.out_features = out_features
-        self.fc = nn.Linear(in_features, out_features, bias=False)
+        self.in_features = feat_dim
+        self.out_features = num_classes
+        self.fc = nn.Linear(self.in_features, self.out_features, bias=False)
         self.eps = eps
 
     def forward(self, x, labels):
         '''
-        input shape (N, in_features)
+        input shape (N, self.in_features)
         '''
         assert len(x) == len(labels)
         assert torch.min(labels) >= 0

@@ -9,6 +9,7 @@ class ContrastiveCenterLoss(nn.Module):
         self.num_classes = num_classes
         self.lambda_c = lambda_c
         self.centers = nn.Parameter(torch.randn(num_classes, feat_dim))
+
     # may not work due to flowing gradient. change center calculation to exp moving avg may work.
     def forward(self, feat, label):
         batch_size = feat.size()[0]

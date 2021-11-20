@@ -14,7 +14,7 @@ class Loss_Selector(object):
         self.loss = None
         self.kwargs = None
 
-    def select_loss(self, name, **kwargs):
+    def __call__(self, name, **kwargs):
         method = getattr(self, name, lambda: "Invalid loss")
         self.kwargs = kwargs
         return method()

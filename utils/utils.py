@@ -102,7 +102,7 @@ def cutout(img, n_holes, length):
         return img
 
 
-def data_split(yaml_data, subject_out):
+def data_split(subject_out):
     data = export_data()
     keys = list(data.keys())
 

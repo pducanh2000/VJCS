@@ -36,9 +36,9 @@ class CrossEntropyLabelSmooth(nn.Module):
 
 
 class AM_Softmax(nn.Module):  # creates the classification layer
-    def __init__(self, m=0.35, s=30, d=2048, num_classes=17, use_gpu=True, epsilon=0.1):
+    def __init__(self, m=0.35, s=30, feat_dim=2048, num_classes=17, use_gpu=True, epsilon=0.1):
         super(AM_Softmax, self).__init__()
-        self.d = d
+        self.d = feat_dim
         self.m = m
         self.s = s
         self.num_classes = num_classes
